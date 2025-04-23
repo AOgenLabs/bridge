@@ -1,15 +1,23 @@
 {
-  "name": "ao-message-bridge",
-  "version": "1.0.0",
-  "description": "Message bridge to integrate AO processes with backend APIs",
-  "main": "bridge.js",
-  "type": "module",
-  "scripts": {
-    "start": "node bridge.js"
-  },
-  "dependencies": {
-    "@permaweb/aoconnect": "^0.0.48",
-    "axios": "^1.6.7",
-    "dotenv": "^16.4.5"
-  }
+    "name": "ao-message-bridge",
+    "version": "1.0.0",
+    "description": "Message bridge to integrate AO processes with backend APIs",
+    "main": "dist/bridge.js",
+    "type": "module",
+    "scripts": {
+        "build": "tsc",
+        "start": "node dist/bridge.js",
+        "dev": "ts-node-dev --respawn src/bridge.ts"
+    },
+    "dependencies": {
+        "@permaweb/aoconnect": "^0.0.48",
+        "axios": "^1.6.7",
+        "dotenv": "^16.4.5"
+    },
+    "devDependencies": {
+        "@types/node": "^18.16.3",
+        "ts-node": "^10.9.1",
+        "ts-node-dev": "^2.0.0",
+        "typescript": "^5.0.4"
+    }
 }
