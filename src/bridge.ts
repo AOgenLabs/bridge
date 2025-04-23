@@ -12,6 +12,7 @@ import {
     EmailRequest,
     Message,
     ResultsResponse,
+    TelegramRequest,
     UpdateRequestData,
     Tag,
 } from "./types.js";
@@ -23,6 +24,8 @@ dotenv.config();
 const AO_PROCESS_ID = process.env.AO_PROCESS_ID || "";
 const EMAIL_API_URL = process.env.EMAIL_API_URL || "";
 const DOCUMENT_API_URL = process.env.DOCUMENT_API_URL || "";
+const TELEGRAM_API_URL =
+    process.env.TELEGRAM_API_URL || "http://localhost:3003/api/telegram/send";
 const CHECK_INTERVAL = parseInt(process.env.CHECK_INTERVAL || "10");
 const ARWEAVE_WALLET_PATH = process.env.ARWEAVE_WALLET_PATH || "";
 
@@ -168,6 +171,49 @@ async function processDocumentRequest(
 }
 
 /**
+ * Process Telegram notification requests
+ */
+async function processTelegramRequest(
+    request: TelegramRequest
+): Promise<APIResponse> {
+    try {
+        console.log(`Processing Telegram notification request: ${request.id}`);
+        console.log(`Sending to chat ID: ${request.chatId}`);
+        console.log(`Message: ${request.message}`);
+
+        // Make the API request
+        const response = await axios({
+            method: "post",
+            url: TELEGRAM_API_URL,
+            data: {
+                chatId: request.chatId,
+                message: request.message,
+                parseMode: request.parseMode,
+                disableNotification: request.disableNotification,
+            },
+        });
+
+        console.log(`Telegram API response: ${response.status}`);
+
+        return {
+            success: true,
+            status: response.status,
+            data: response.data,
+        };
+    } catch (error: any) {
+        console.error(
+            `Error processing Telegram request ${request.id}:`,
+            error
+        );
+
+        return {
+            success: false,
+            error: error.message,
+        };
+    }
+}
+
+/**
  * Process API requests
  */
 async function processAPIRequest(request: APIRequest): Promise<void> {
@@ -190,6 +236,10 @@ async function processAPIRequest(request: APIRequest): Promise<void> {
 
             case "document":
                 result = await processDocumentRequest(request);
+                break;
+
+            case "telegram":
+                result = await processTelegramRequest(request);
                 break;
 
             default:
@@ -309,6 +359,7 @@ async function checkForNewMessages(): Promise<void> {
                             "SendEmail",
                             "CreateDocument",
                             "ListDocuments",
+                            "SendTelegram",
                         ].includes(action)
                     ) {
                         console.log(
@@ -385,6 +436,22 @@ async function checkForNewMessages(): Promise<void> {
                                             : `list-${Date.now()}`,
                                         type: "document",
                                         action: "list",
+                                        timestamp: Date.now(),
+                                        status: "pending",
+                                    };
+                                    break;
+
+                                case "SendTelegram":
+                                    request = {
+                                        id: referenceTag
+                                            ? referenceTag.value
+                                            : `telegram-${Date.now()}`,
+                                        type: "telegram",
+                                        chatId: requestData.chatId,
+                                        message: requestData.message,
+                                        parseMode: requestData.parseMode,
+                                        disableNotification:
+                                            requestData.disableNotification,
                                         timestamp: Date.now(),
                                         status: "pending",
                                     };
